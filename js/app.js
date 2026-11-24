@@ -7,19 +7,26 @@ const App = {
     Storage.init();
     Auth.initLoginUI();
 
+    const hashPage = window.location.hash.slice(1);
+
     if (Auth.restoreSession()) {
       if (Auth.isAdmin()) {
         this.showPortal('admin');
-        this.navigate('admin-dashboard');
+        const startPage = (hashPage && hashPage.startsWith('admin')) ? hashPage : 'admin-dashboard';
+        this.navigate(startPage, false);
       } else if (Auth.isStudent()) {
         this.showPortal('student');
-        this.navigate('student-dashboard');
+        const student = Auth.getCurrentStudent();
+        if (student) this.updateStudentHeaderAvatar(student);
+        const startPage = (hashPage && hashPage.startsWith('student')) ? hashPage : 'student-dashboard';
+        this.navigate(startPage, false);
       }
     } else {
       this.showPortal('login');
     }
 
     this.initNavigation();
+    this.initRouting();
     this.initTheme();
     this.updateAcademicYearDisplay();
     this.initMobileMenu();
@@ -36,7 +43,7 @@ const App = {
     if(student) student.style.display = portal === 'student' ? 'flex' : 'none';
   },
 
-  navigate(pageName) {
+  navigate(pageName, addToHistory = true) {
     if (!pageName) return;
     this.currentPage = pageName;
     const portal = pageName.startsWith('admin') ? 'admin' : 'student';
@@ -57,9 +64,90 @@ const App = {
       });
     }
 
+    if (addToHistory && window.history && window.history.pushState) {
+      const currentHash = window.location.hash.slice(1);
+      if (currentHash !== pageName) {
+        window.history.pushState({ page: pageName, portal }, '', '#' + pageName);
+      }
+    }
+
     this.renderPage(pageName);
     this.closeMobileSidebar();
     this.updateHeaderTitle(pageName);
+    this.updateBreadcrumbs(pageName);
+  },
+
+  goBack() {
+    if (window.history && window.history.length > 1) {
+      window.history.back();
+    } else {
+      const portal = Auth.isAdmin() ? 'admin' : Auth.isStudent() ? 'student' : '';
+      if (portal) this.navigate(portal + '-dashboard');
+    }
+  },
+
+  initRouting() {
+    window.addEventListener('popstate', (e) => {
+      const targetPage = (e.state && e.state.page) || window.location.hash.slice(1);
+      if (targetPage) {
+        const portal = targetPage.startsWith('admin') ? 'admin' : 'student';
+        if ((portal === 'admin' && Auth.isAdmin()) || (portal === 'student' && Auth.isStudent())) {
+          this.navigate(targetPage, false);
+          return;
+        }
+      }
+      if (Auth.isAdmin()) this.navigate('admin-dashboard', false);
+      else if (Auth.isStudent()) this.navigate('student-dashboard', false);
+    });
+  },
+
+  updateBreadcrumbs(pageName) {
+    const portal = pageName.startsWith('admin') ? 'admin' : 'student';
+    const bar = document.getElementById(portal + '-breadcrumb-bar');
+    if (!bar) return;
+
+    if (pageName === 'admin-dashboard' || pageName === 'student-dashboard') {
+      bar.style.display = 'none';
+      bar.innerHTML = '';
+      return;
+    }
+
+    const titles = {
+      'admin-students': 'Students',
+      'admin-subjects': 'Subjects',
+      'admin-marks': 'Enter Marks',
+      'admin-results': 'Results',
+      'admin-rankings': 'Rankings',
+      'admin-analytics': 'Analytics',
+      'admin-export': 'Export Data',
+      'admin-ai': 'AI Assistant',
+      'admin-settings': 'Settings',
+      'student-profile': 'My Profile',
+      'student-subjects': 'My Subjects',
+      'student-results': 'My Results',
+      'student-performance': 'Performance',
+      'student-rank': 'My Rank',
+      'student-goals': 'Goal Simulator',
+      'student-improvement': 'Improvement Plan',
+      'student-ai': 'AI Assistant',
+      'student-settings': 'Settings'
+    };
+
+    const title = titles[pageName] || 'Section';
+    const homePage = portal === 'admin' ? 'admin-dashboard' : 'student-dashboard';
+    const homeLabel = 'Dashboard';
+
+    bar.style.display = 'flex';
+    bar.innerHTML = `
+      <button type="button" class="btn btn-sm btn-outline back-nav-btn" onclick="App.goBack()" aria-label="Go Back">
+        <span>←</span> Back
+      </button>
+      <div class="breadcrumb-trail">
+        <a href="#${homePage}" class="breadcrumb-link" onclick="event.preventDefault();App.navigate('${homePage}')">${homeLabel}</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">${title}</span>
+      </div>
+    `;
   },
 
   renderPage(pageName) {
@@ -534,11 +622,14 @@ const App = {
 
     let html = `
       <div class="page-header flex-between mb-2">
-        <div>
-          <h2 style="font-size: 1.75rem; font-weight: 700;">Welcome back, ${UI.escapeHtml(student.name)}! 👋</h2>
-          <p class="text-light" style="margin-top: 4px;">${UI.escapeHtml(student.className)} — Section ${student.section} | Roll No: ${UI.escapeHtml(student.rollNo)}</p>
+        <div class="flex items-center gap-1">
+          ${student.avatar ? `<div class="avatar avatar-md" style="margin-right: 8px;"><img src="${student.avatar}" alt="${UI.escapeHtml(student.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>` : ''}
+          <div>
+            <h2 style="font-size: 1.75rem; font-weight: 700;">Welcome back, ${UI.escapeHtml(student.name)}! 👋</h2>
+            <p class="text-light" style="margin-top: 4px;">${UI.escapeHtml(student.className)} — Section ${student.section} | Roll No: ${UI.escapeHtml(student.rollNo)}</p>
+          </div>
         </div>
-        <div class="flex gap-1">
+        <div class="flex gap-1" style="flex-wrap: wrap;">
           <button class="btn btn-primary" onclick="App.navigate('student-performance')">${Icons.analytics} Analyze My Performance</button>
           <button class="btn btn-outline" onclick="App.navigate('student-ai')">${Icons.ai} Ask EduBot</button>
         </div>
@@ -642,17 +733,36 @@ const App = {
     const student = Auth.getCurrentStudent();
     if (!student) return;
 
+    const avatarContent = student.avatar
+      ? `<img src="${student.avatar}" alt="${UI.escapeHtml(student.name)}" id="student-profile-img" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+      : `<span id="student-profile-initials">${UI.getInitials(student.name)}</span>`;
+
     const html = `
-      <div class="card">
-        <div class="flex gap-1" style="align-items: center; margin-bottom: 20px;">
-          <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">
-            ${UI.getInitials(student.name)}
+      <div class="card neu-card mb-2">
+        <div class="flex items-center gap-2 mb-2" style="flex-wrap: wrap;">
+          <div id="student-avatar-container" style="position: relative; width: 88px; height: 88px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: bold; box-shadow: var(--shadow-neu-sm); overflow: hidden; flex-shrink: 0;">
+            ${avatarContent}
           </div>
-          <div>
-            <h2>${UI.escapeHtml(student.name)}</h2>
-            <p class="text-muted">${student.id}</p>
+          <div style="flex: 1; min-width: 220px;">
+            <h2 id="profile-name" style="margin-bottom: 2px;">${UI.escapeHtml(student.name)}</h2>
+            <p class="text-light" id="profile-roll">Roll No: ${UI.escapeHtml(student.rollNo)} | ID: ${student.id}</p>
+
+            <div class="flex gap-1 mt-1" style="flex-wrap: wrap; align-items: center;">
+              <input type="file" id="profile-photo-input" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
+              <button type="button" class="btn btn-sm btn-outline" id="btn-change-photo" onclick="document.getElementById('profile-photo-input').click()">
+                📷 Change Photo
+              </button>
+              ${student.avatar ? `<button type="button" class="btn btn-sm btn-outline text-danger" id="btn-remove-photo" onclick="App.removeStudentPhoto()">🗑️ Remove</button>` : ''}
+            </div>
+            <div id="photo-preview-actions" class="flex gap-1 mt-1" style="display: none; align-items: center; flex-wrap: wrap;">
+              <span class="text-sm text-success font-bold">Preview ready:</span>
+              <button type="button" class="btn btn-sm btn-primary" id="btn-save-photo">Save Photo</button>
+              <button type="button" class="btn btn-sm btn-outline" id="btn-cancel-photo">Cancel</button>
+            </div>
+            <div id="photo-error" class="form-error mt-1" style="display: none;"></div>
           </div>
         </div>
+
         <div class="dashboard-grid">
           <div class="form-group">
             <label class="form-label">Roll Number</label>
@@ -682,6 +792,87 @@ const App = {
       </div>
     `;
     UI.setHTML(page, html);
+    this.initProfilePhotoHandlers(student);
+  },
+
+  initProfilePhotoHandlers(student) {
+    const fileInput = document.getElementById('profile-photo-input');
+    const previewActions = document.getElementById('photo-preview-actions');
+    const saveBtn = document.getElementById('btn-save-photo');
+    const cancelBtn = document.getElementById('btn-cancel-photo');
+    const avatarContainer = document.getElementById('student-avatar-container');
+    const errorEl = document.getElementById('photo-error');
+
+    if (!fileInput) return;
+
+    let pendingDataUrl = null;
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+
+      if (typeof UI !== 'undefined' && UI.validateAndProcessImage) {
+        UI.validateAndProcessImage(file, (dataUrl) => {
+          pendingDataUrl = dataUrl;
+          if (avatarContainer) {
+            avatarContainer.innerHTML = `<img src="${dataUrl}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+          }
+          if (previewActions) previewActions.style.display = 'flex';
+        });
+      }
+    });
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        if (!pendingDataUrl) return;
+        student.avatar = pendingDataUrl;
+        const allStudents = window.EduResult.state.students;
+        const idx = allStudents.findIndex(s => s.id === student.id);
+        if (idx > -1) allStudents[idx].avatar = pendingDataUrl;
+        Storage.save('eduresult_students', allStudents);
+        this.updateStudentHeaderAvatar(student);
+        UI.toast('Profile photo updated successfully!', 'success');
+        this.renderStudentProfile();
+      });
+    }
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        pendingDataUrl = null;
+        fileInput.value = '';
+        this.renderStudentProfile();
+      });
+    }
+  },
+
+  removeStudentPhoto() {
+    const student = Auth.getCurrentStudent();
+    if (!student) return;
+    UI.confirm('Remove Profile Photo', 'Are you sure you want to remove your profile photo?', () => {
+      student.avatar = '';
+      const allStudents = window.EduResult.state.students;
+      const idx = allStudents.findIndex(s => s.id === student.id);
+      if (idx > -1) allStudents[idx].avatar = '';
+      Storage.save('eduresult_students', allStudents);
+      this.updateStudentHeaderAvatar(student);
+      UI.toast('Profile photo removed.', 'info');
+      this.renderStudentProfile();
+    });
+  },
+
+  updateStudentHeaderAvatar(student) {
+    const badge = document.getElementById('student-avatar-badge');
+    if (!badge) return;
+    if (student && student.avatar) {
+      badge.innerHTML = `<img src="${student.avatar}" alt="${UI.escapeHtml(student.name)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+      badge.style.padding = '0';
+    } else {
+      const initial = student && student.name ? student.name.charAt(0).toUpperCase() : 'S';
+      badge.textContent = initial;
+      badge.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+    }
   },
 
   renderStudentSubjects() {
@@ -1313,11 +1504,22 @@ const App = {
   },
 
   initMobileMenu() {
-    const menuBtns = document.querySelectorAll('#mobile-menu-btn, .mobile-menu-btn');
+    const menuBtns = document.querySelectorAll('#mobile-menu-btn, #mobile-menu-btn-student, .mobile-menu-btn');
+    const closeBtns = document.querySelectorAll('#admin-sidebar-close, #student-sidebar-close, .sidebar-close-btn');
     const overlay = document.getElementById('sidebar-overlay');
 
     menuBtns.forEach(btn => {
-      btn.addEventListener('click', () => this.toggleMobileSidebar());
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleMobileSidebar();
+      });
+    });
+
+    closeBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeMobileSidebar();
+      });
     });
 
     if (overlay) {
@@ -1330,14 +1532,32 @@ const App = {
     if (!portal) return;
     const sidebar = document.getElementById(portal + '-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.toggle('open');
-    if (overlay) overlay.classList.toggle('active');
+    const menuBtn = document.getElementById(portal === 'admin' ? 'mobile-menu-btn' : 'mobile-menu-btn-student');
+
+    if (!sidebar) return;
+    const willOpen = !sidebar.classList.contains('open');
+
+    if (willOpen) {
+      sidebar.classList.add('open');
+      if (overlay) overlay.classList.add('active');
+      if (menuBtn) menuBtn.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('sidebar-open');
+    } else {
+      sidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('active');
+      if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('sidebar-open');
+    }
   },
 
   closeMobileSidebar() {
     document.querySelectorAll('.sidebar').forEach(s => s.classList.remove('open'));
     const overlay = document.getElementById('sidebar-overlay');
     if (overlay) overlay.classList.remove('active');
+    document.querySelectorAll('#mobile-menu-btn, #mobile-menu-btn-student, .mobile-menu-btn').forEach(btn => {
+      btn.setAttribute('aria-expanded', 'false');
+    });
+    document.body.classList.remove('sidebar-open');
   },
 
   updateHeaderTitle(pageName) {
@@ -1372,7 +1592,10 @@ const App = {
 
   initKeyboard() {
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') UI.hideAllModals();
+      if (e.key === 'Escape') {
+        UI.hideAllModals();
+        this.closeMobileSidebar();
+      }
     });
   },
 

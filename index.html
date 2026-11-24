@@ -88,8 +88,9 @@
     <!-- ADMIN PORTAL -->
     <div id="admin-portal" class="portal" style="display: none;">
       <!-- Sidebar -->
-      <aside id="admin-sidebar" class="sidebar">
+      <aside id="admin-sidebar" class="sidebar" aria-label="Admin Navigation">
         <div class="sidebar-header">
+          <button class="sidebar-close-btn d-mobile" id="admin-sidebar-close" aria-label="Close sidebar">✕</button>
           <div class="brand-icon-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
@@ -164,7 +165,7 @@
       <!-- Main Content -->
       <main id="admin-main" class="main-content">
         <header id="admin-header" class="header-bar">
-          <button id="mobile-menu-btn" class="btn btn-icon d-mobile">☰</button>
+          <button id="mobile-menu-btn" class="btn btn-icon d-mobile mobile-menu-btn" aria-label="Open Navigation Menu" aria-expanded="false" aria-controls="admin-sidebar">☰</button>
           <div class="header-search">
             <span class="header-search-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -197,6 +198,7 @@
         </header>
 
         <div class="content-wrapper">
+          <div id="admin-breadcrumb-bar" class="breadcrumb-bar" style="display: none;"></div>
           <!-- Admin Dashboard -->
           <section id="page-admin-dashboard" class="page-section">
             <h1 class="mb-2">Dashboard</h1>
@@ -614,8 +616,9 @@
     <!-- STUDENT PORTAL -->
     <div id="student-portal" class="portal" style="display: none;">
       <!-- Sidebar -->
-      <aside id="student-sidebar" class="sidebar">
+      <aside id="student-sidebar" class="sidebar" aria-label="Student Navigation">
         <div class="sidebar-header">
+          <button class="sidebar-close-btn d-mobile" id="student-sidebar-close" aria-label="Close sidebar">✕</button>
           <div class="brand-icon-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
@@ -690,7 +693,7 @@
       <!-- Main Content -->
       <main id="student-main" class="main-content">
         <header id="student-header" class="header-bar">
-          <button id="mobile-menu-btn-student" class="btn btn-icon d-mobile">☰</button>
+          <button id="mobile-menu-btn-student" class="btn btn-icon d-mobile mobile-menu-btn" aria-label="Open Navigation Menu" aria-expanded="false" aria-controls="student-sidebar">☰</button>
           <div class="header-search">
             <span class="header-search-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -712,6 +715,7 @@
         </header>
 
         <div class="content-wrapper">
+          <div id="student-breadcrumb-bar" class="breadcrumb-bar" style="display: none;"></div>
           <!-- Student Dashboard -->
           <section id="page-student-dashboard" class="page-section">
             <h1 class="mb-2">Welcome, <span id="welcome-student-name">Student</span></h1>

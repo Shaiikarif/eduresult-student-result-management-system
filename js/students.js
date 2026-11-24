@@ -169,7 +169,7 @@ const Students = {
           <td>${idx}</td>
           <td>${UI.escapeHtml(s.rollNo)}</td>
           <td><div class="flex" style="align-items:center;gap:10px">
-            <div class="avatar avatar-sm">${typeof UI.getInitials !== 'undefined' ? UI.getInitials(s.name) : s.name.charAt(0)}</div>
+            ${typeof UI.renderAvatar !== 'undefined' ? UI.renderAvatar(s, 'sm') : `<div class="avatar avatar-sm">${s.name.charAt(0)}</div>`}
             ${UI.escapeHtml(s.name)}
           </div></td>
           <td>${UI.escapeHtml(s.className)}</td>
@@ -268,7 +268,7 @@ const Students = {
     
     body.innerHTML = `
       <div style="text-align:center;margin-bottom:20px">
-        <div class="avatar avatar-lg" style="margin:0 auto 12px">${typeof UI.getInitials !== 'undefined' ? UI.getInitials(student.name) : student.name.charAt(0)}</div>
+        <div style="margin:0 auto 12px;display:flex;justify-content:center">${typeof UI.renderAvatar !== 'undefined' ? UI.renderAvatar(student, 'lg') : `<div class="avatar avatar-lg">${student.name.charAt(0)}</div>`}</div>
         <h3>${UI.escapeHtml(student.name)}</h3>
         <p class="text-muted">Roll No: ${UI.escapeHtml(student.rollNo)}</p>
       </div>
@@ -294,8 +294,22 @@ const Students = {
   },
 
   renderForm(student = null) {
-    const s = student || { name: '', rollNo: '', className: 'B.Tech CSE', section: 'A', academicYear: '2026-2027', dateOfBirth: '', email: '', phone: '' };
+    const s = student || { name: '', rollNo: '', className: 'B.Tech CSE', section: 'A', academicYear: '2026-2027', dateOfBirth: '', email: '', phone: '', avatar: '' };
+    const currentAvatar = s.avatar || '';
     return `
+      <div class="form-row" style="align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 14px; width: 100%; flex-wrap: wrap;">
+          <div id="modal-avatar-preview" style="width: 56px; height: 56px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; flex-shrink: 0; box-shadow: var(--shadow-neu-sm);">
+            ${currentAvatar ? `<img src="${currentAvatar}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (s.name ? (typeof UI.getInitials !== 'undefined' ? UI.getInitials(s.name) : s.name.charAt(0)) : '👤')}
+          </div>
+          <div style="flex: 1; min-width: 200px;">
+            <label class="form-label" for="sf-avatar" style="margin-bottom: 4px;">Profile Photo</label>
+            <input type="file" id="sf-avatar" accept="image/png,image/jpeg,image/webp,image/gif" class="form-input" style="padding: 6px; font-size: 0.85rem;" onchange="Students.handleAvatarFileChange(this)">
+            <input type="hidden" id="sf-avatar-data" value="${currentAvatar}">
+            ${currentAvatar ? `<button type="button" class="btn btn-sm btn-outline text-danger mt-1" id="sf-avatar-remove" onclick="Students.removeFormAvatar()" style="padding: 2px 8px; font-size: 0.75rem;">Remove Photo</button>` : ''}
+          </div>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="sf-name">Full Name *</label>
@@ -351,6 +365,32 @@ const Students = {
     `;
   },
 
+  handleAvatarFileChange(input) {
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    if (typeof UI !== 'undefined' && UI.validateAndProcessImage) {
+      UI.validateAndProcessImage(file, (dataUrl) => {
+        const preview = document.getElementById('modal-avatar-preview');
+        const hiddenInput = document.getElementById('sf-avatar-data');
+        if (hiddenInput) hiddenInput.value = dataUrl;
+        if (preview) {
+          preview.innerHTML = `<img src="${dataUrl}" alt="Avatar Preview" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        }
+      });
+    }
+  },
+
+  removeFormAvatar() {
+    const hiddenInput = document.getElementById('sf-avatar-data');
+    const preview = document.getElementById('modal-avatar-preview');
+    const fileInput = document.getElementById('sf-avatar');
+    if (hiddenInput) hiddenInput.value = '';
+    if (fileInput) fileInput.value = '';
+    if (preview) preview.innerHTML = '👤';
+    const removeBtn = document.getElementById('sf-avatar-remove');
+    if (removeBtn) removeBtn.style.display = 'none';
+  },
+
   handleAdd() {
     const data = this.getFormData();
     if(this.validate(data).valid) {
@@ -380,7 +420,8 @@ const Students = {
       academicYear: document.getElementById('sf-year')?.value?.trim() || '2026-2027',
       dateOfBirth: document.getElementById('sf-dob')?.value || '',
       email: document.getElementById('sf-email')?.value?.trim() || '',
-      phone: document.getElementById('sf-phone')?.value?.trim() || ''
+      phone: document.getElementById('sf-phone')?.value?.trim() || '',
+      avatar: document.getElementById('sf-avatar-data')?.value || ''
     };
   },
 

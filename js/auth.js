@@ -15,6 +15,9 @@ const Auth = {
       const session = { role: 'student', studentId: student.id, timestamp: Date.now() };
       Storage.saveSession(session);
       window.EduResult.currentUser = session;
+      if (typeof App !== 'undefined' && App.updateStudentHeaderAvatar) {
+        App.updateStudentHeaderAvatar(student);
+      }
       return student;
     }
     return null;
@@ -26,6 +29,9 @@ const Auth = {
     
     // Reset app state
     App.showPortal('login');
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
     
     // Reset login forms
     const adminForm = document.getElementById('admin-login-section');

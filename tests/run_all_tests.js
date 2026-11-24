@@ -10,7 +10,8 @@ const testSuites = [
   'unit_calculations.test.js',
   'rankings_analytics.test.js',
   'data_integrity.test.js',
-  'security_xss.test.js'
+  'security_xss.test.js',
+  'navigation_and_image.test.js'
 ];
 
 console.log('========================================================');

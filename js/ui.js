@@ -224,6 +224,79 @@ const UI = {
       clearTimeout(timer);
       timer = setTimeout(() => fn(...args), delay);
     };
+  },
+
+  renderAvatar(student, size = 'sm') {
+    if (!student) return `<div class="avatar avatar-${size}">U</div>`;
+    const name = typeof student === 'string' ? student : (student.name || '');
+    const avatar = (typeof student === 'object' && student.avatar) ? student.avatar : '';
+    if (avatar) {
+      return `<div class="avatar avatar-${size}"><img src="${avatar}" alt="${this.escapeHtml(name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>`;
+    }
+    return `<div class="avatar avatar-${size}">${this.getInitials(name)}</div>`;
+  },
+
+  validateAndProcessImage(file, callback) {
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      this.toast('Invalid file type. Please select a JPEG, PNG, WebP, or GIF image.', 'danger');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      this.toast('Image size must be under 2MB.', 'danger');
+      return;
+    }
+
+    if (typeof FileReader === 'undefined') return;
+
+    const reader = new FileReader();
+    reader.onerror = () => {
+      this.toast('Error reading file.', 'danger');
+    };
+    reader.onload = (e) => {
+      if (typeof Image === 'undefined') {
+        callback(e.target.result);
+        return;
+      }
+      const img = new Image();
+      img.onerror = () => {
+        this.toast('Error loading image.', 'danger');
+      };
+      img.onload = () => {
+        try {
+          const maxDim = 180;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          if (typeof document !== 'undefined' && document.createElement) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            callback(dataUrl);
+          } else {
+            callback(e.target.result);
+          }
+        } catch (err) {
+          callback(e.target.result);
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 };
 

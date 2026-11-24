@@ -1,8 +1,22 @@
 /* ==========================================================================
    EduResult — Responsive Breakpoints (responsive.css)
+   Mobile (320px-480px), Tablets (481px-768px), Laptops (769px-1024px), Desktop (1025px+)
    ========================================================================== */
 
-/* Large screens adjustments */
+/* Universal Overflow Protection */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-container, .main-content, .content-wrapper, .portal {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   Large screens adjustments (1025px - 1280px)
+   -------------------------------------------------------------------------- */
 @media (max-width: 1280px) {
   .dash-row-middle {
     grid-template-columns: 1fr 1fr;
@@ -18,7 +32,9 @@
   }
 }
 
-/* Tablet (max-width: 1024px) */
+/* --------------------------------------------------------------------------
+   Small Laptops & Tablets (max-width: 1024px)
+   -------------------------------------------------------------------------- */
 @media (max-width: 1024px) {
   .sidebar {
     transform: translateX(-120%);
@@ -27,16 +43,23 @@
     left: 16px;
     top: 16px;
     bottom: 16px;
-    box-shadow: 12px 12px 30px rgba(0, 0, 0, 0.2);
+    width: min(300px, 85vw);
+    box-shadow: 12px 12px 30px rgba(0, 0, 0, 0.25);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .sidebar.open {
     transform: translateX(0);
   }
+
+  .sidebar-close-btn {
+    display: flex;
+  }
   
   .main-content {
     margin-left: 0;
     padding: 20px 16px;
+    width: 100%;
   }
   
   .d-mobile {
@@ -49,7 +72,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(15, 23, 42, 0.5);
     z-index: 140;
     backdrop-filter: blur(4px);
   }
@@ -74,6 +97,7 @@
 
   .modal-content {
     width: 95%;
+    max-width: 720px;
   }
 
   .charts-grid {
@@ -89,21 +113,28 @@
   }
 }
 
-/* Mobile (max-width: 768px) */
+/* --------------------------------------------------------------------------
+   Tablets (max-width: 768px)
+   -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
   .header-bar {
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
+    gap: 12px;
   }
 
   .header-search {
     max-width: 100%;
+    order: 2;
   }
 
   .header-controls {
+    display: flex;
     justify-content: space-between;
+    align-items: center;
     width: 100%;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
   .stat-grid-4 {
@@ -135,6 +166,23 @@
     display: none;
   }
 
+  /* Responsive Tables */
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table.data-table,
+  table.top-perf-table,
+  table.recent-res-table,
+  table.report-marks-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .top-perf-table th, .top-perf-table td,
   .recent-res-table th, .recent-res-table td {
     padding: 8px 6px;
@@ -143,12 +191,13 @@
 
   .form-row {
     flex-direction: column;
-    gap: 0;
+    gap: 12px;
   }
 
   .filter-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
 
   .filter-select {
@@ -176,14 +225,176 @@
   
   .pagination {
     flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
   }
 
   .search-bar {
     min-width: 100%;
   }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header .flex {
+    width: 100%;
+    flex-wrap: wrap;
+  }
 }
 
-/* Print Styles */
+/* --------------------------------------------------------------------------
+   Mobile Devices (max-width: 480px) — 320px to 480px
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 14px 10px;
+  }
+
+  /* Header adjustments for extra small viewports */
+  .header-bar {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .header-search input {
+    height: 42px;
+    font-size: 0.85rem;
+    padding-left: 40px;
+  }
+
+  .header-search-icon {
+    left: 12px;
+  }
+
+  .header-controls {
+    gap: 6px;
+  }
+
+  .header-profile-role {
+    display: none;
+  }
+
+  .header-profile-pill {
+    padding: 4px 10px 4px 4px;
+  }
+
+  .header-year-pill {
+    padding: 4px 10px;
+  }
+
+  .year-label {
+    display: none;
+  }
+
+  .year-value {
+    font-size: 0.75rem;
+  }
+
+  /* Login Selection on Mobile */
+  #login-selection {
+    flex-direction: column;
+    width: 100%;
+    gap: 14px;
+  }
+
+  .login-card {
+    width: 100%;
+    padding: 1.5rem 1rem;
+  }
+
+  #admin-login-section,
+  #student-login-section {
+    padding: 1.5rem 1rem;
+    width: 100%;
+  }
+
+  .login-wrapper {
+    padding: 0 4px;
+  }
+
+  .login-header h1 {
+    font-size: 2rem;
+  }
+
+  /* Stat values and text */
+  .stat-value {
+    font-size: 1.75rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.78rem;
+  }
+
+  /* Cards */
+  .card {
+    padding: 16px 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Modals */
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
+    padding: 16px 12px;
+    max-height: 92vh;
+    overflow-y: auto;
+    margin: 10px auto;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  /* Buttons touch target */
+  .btn {
+    min-height: 40px;
+    font-size: 0.88rem;
+    padding: 8px 14px;
+  }
+
+  .btn-sm {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .btn-pill {
+    padding: 4px 12px;
+    font-size: 0.78rem;
+  }
+
+  /* Breadcrumbs */
+  .breadcrumb-bar {
+    gap: 6px;
+    font-size: 0.82rem;
+  }
+
+  .back-nav-btn {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+  }
+
+  /* AI Chat Area */
+  .ai-chat {
+    height: 400px;
+  }
+
+  .ai-chip {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+
+  .ai-input-area {
+    padding: 8px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Print Styles
+   -------------------------------------------------------------------------- */
 @media print {
   body {
     background: #ffffff !important;
@@ -192,6 +403,7 @@
 
   .sidebar,
   .header-bar,
+  .breadcrumb-bar,
   #toast-container,
   #sidebar-overlay,
   .d-print-none,
